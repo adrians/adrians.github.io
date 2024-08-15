@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.49.0/min/vs/editor/editor.main.min.css">
+  <script>
+    var require = {
+      paths: {
+        'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.49.0/min/vs'
+      }
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.49.0/min/vs/loader.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.49.0/min/vs/editor/editor.main.nls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.49.0/min/vs/editor/editor.main.js"></script>
+  <script src="https://cdn.tailwindcss.com/"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script type="module">
+    import { DefaultRubyVM } from "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.6.2/dist/browser/+esm";
+    const response = await fetch("https://cdn.jsdelivr.net/npm/@ruby/3.3-wasm-wasi@2.6.2/dist/ruby+stdlib.wasm");
+    const module = await WebAssembly.compileStreaming(response);
+    var vm;
+
+    export async function setup(){
+      vm = (await DefaultRubyVM(module)).vm;
+    }
+    setup()
+    window.rubySetup = setup;
+
+    export async function rubyEval(arg){
+      const ret = vm.eval(arg)
+      var logsContainer = document.getElementById('output_logs')
+      logsContainer.innerHTML += "<code class='bg-black text-white rounded'>" + arg+ "</code>"
+      logsContainer.innerHTML += "<p>" + ret.toString() + "</p>"
+      logsContainer.innerHTML += "<hr/>"
+      logsContainer.lastChild.scrollIntoView()
+      await MathJax.typesetPromise();
+    }
+    window.rubyEval = rubyEval
+
+  </script>
+</head>
+<body>
+  <main class="container mx-auto mt-28 px-5">
+    <div id="output_logs"  class="w-1/2 h-40 border-2 border-black rounded overflow-x-scroll">
+    Output will be presented here.
+    <hr/>
+    </div>
+    <div id="input_editor" class="w-1/2 h-40 border-2 border-black rounded mathjax_ignore"></div>
+
+    <button class="border-2" onclick="window.rubyEval(window.editor.getValue());">Run</button>
+    <button class="border-2" onclick="window.rubySetup()">Reset</button>
+    <script>
+      var editor = monaco.editor.create(document.getElementById('input_editor'), {
+        value: `
+'\\({\\color{red}a} \\ne 0\\)'`,
+        language: 'ruby',
+      });
+    </script>
+  </main>
+</body>
+</html>
